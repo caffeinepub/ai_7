@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "PlusJakartaSans";
+  src: url("/assets/fonts/PlusJakartaSans.woff2") format("woff2");
+  font-weight: 300 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Figtree";
+  src: url("/assets/fonts/Figtree.woff2") format("woff2");
+  font-weight: 300 900;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    --radius: 0.5rem;
+
+    /* Pink theme */
+    --background: 0.98 0.008 0;
+    --foreground: 0.25 0.03 0;
+
+    --card: 0.985 0.005 0;
+    --card-foreground: 0.25 0.03 0;
+
+    --popover: 0.995 0.003 0;
+    --popover-foreground: 0.25 0.03 0;
+
+    /* Rose pink primary */
+    --primary: 0.6 0.18 0;
+    --primary-foreground: 0.99 0.003 0;
+
+    --secondary: 0.94 0.02 0;
+    --secondary-foreground: 0.35 0.04 0;
+
+    --muted: 0.945 0.015 0;
+    --muted-foreground: 0.52 0.03 0;
+
+    --accent: 0.92 0.03 0;
+    --accent-foreground: 0.3 0.035 0;
+
+    --destructive: 0.577 0.245 27.325;
+    --destructive-foreground: 0.985 0 0;
+
+    --border: 0.88 0.025 0;
+    --input: 0.88 0.025 0;
+    --ring: 0.6 0.18 0;
+
+    --chart-1: 0.646 0.222 41.116;
+    --chart-2: 0.6 0.118 184.704;
+    --chart-3: 0.398 0.07 227.392;
+    --chart-4: 0.828 0.189 84.429;
+    --chart-5: 0.769 0.188 70.08;
+
+    --sidebar: 0.96 0.015 0;
+    --sidebar-foreground: 0.25 0.03 0;
+    --sidebar-primary: 0.6 0.18 0;
+    --sidebar-primary-foreground: 0.99 0.003 0;
+    --sidebar-accent: 0.91 0.025 0;
+    --sidebar-accent-foreground: 0.3 0.035 0;
+    --sidebar-border: 0.88 0.025 0;
+    --sidebar-ring: 0.6 0.18 0;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "PlusJakartaSans", "Figtree", sans-serif;
+  }
+}
+
+/* Prevent text selection during drag operations */
+.no-select {
+  user-select: none;
+}
+
+/* Image protection - no right-click, no drag */
+.protected-image {
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.protected-image-wrapper {
+  user-select: none;
+}
+
+.protected-image-wrapper canvas,
+.protected-image-wrapper img {
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
