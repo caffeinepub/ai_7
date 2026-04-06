@@ -23,18 +23,16 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import type { AIImage } from "../../backend";
 import { ImageLightbox } from "../../components/ImageLightbox";
 import {
-  useLocalAllTags,
-  useLocalCreateTag,
-  useLocalDeleteTag,
-} from "../../hooks/useLocalTags";
-import {
   useAddImage,
+  useAllTags,
+  useCreateTag,
   useDeleteImage,
+  useDeleteTag,
   useLatestImages,
 } from "../../hooks/useQueries";
 import { AdminLayout } from "./AdminLayout";
@@ -80,11 +78,11 @@ export function ImageManagementPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: allTags = [], isLoading: tagsLoading } = useLocalAllTags();
+  const { data: allTags = [], isLoading: tagsLoading } = useAllTags();
   const { data: allImages = [], isLoading: imgLoading } = useLatestImages(500);
 
-  const createTag = useLocalCreateTag();
-  const deleteTag = useLocalDeleteTag();
+  const createTag = useCreateTag();
+  const deleteTag = useDeleteTag();
   const addImage = useAddImage();
   const deleteImage = useDeleteImage();
 
@@ -95,7 +93,7 @@ export function ImageManagementPage() {
       await createTag.mutateAsync(newTagName.trim());
       setNewTagName("");
       setShowNewTagInput(false);
-      toast.success(`标签 “${newTagName.trim()}” 创建成功`);
+      toast.success(`标签 "${newTagName.trim()}" 创建成功`);
     } catch (e) {
       toast.error(`创建失败：${e instanceof Error ? e.message : String(e)}`);
     }
@@ -155,7 +153,7 @@ export function ImageManagementPage() {
         prev.length < MAX_TAGS_PER_IMAGE ? [...prev, tagId] : prev,
       );
       setInlineNewTagName("");
-      toast.success(`标签 “${inlineNewTagName.trim()}” 已创建并选中`);
+      toast.success(`标签 "${inlineNewTagName.trim()}" 已创建并选中`);
     } catch (e) {
       toast.error(`创建失败：${e instanceof Error ? e.message : String(e)}`);
     }
@@ -185,14 +183,14 @@ export function ImageManagementPage() {
           delete next[key];
           return next;
         });
-        toast.success(`“${file.name}” 上传成功`);
+        toast.success(`"${file.name}" 上传成功`);
       } catch {
         setUploadProgress((prev) => {
           const next = { ...prev };
           delete next[key];
           return next;
         });
-        toast.error(`“${file.name}” 上传失败`);
+        toast.error(`"${file.name}" 上传失败`);
       }
     }
   };
@@ -328,7 +326,7 @@ export function ImageManagementPage() {
                   className="text-xs text-muted-foreground"
                   data-ocid="admin.tags.empty_state"
                 >
-                  暂无标签，点击上方按鈕创建
+                  暂无标签，点击上方按钮创建
                 </p>
               ) : (
                 <div className="flex flex-wrap gap-2">

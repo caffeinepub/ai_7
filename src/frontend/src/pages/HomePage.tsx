@@ -5,8 +5,8 @@ import type { AIImage } from "../backend";
 import { ImageGrid } from "../components/ImageGrid";
 import { ImageLightbox } from "../components/ImageLightbox";
 import { PublicHeader } from "../components/PublicHeader";
-import { useLocalAllTags } from "../hooks/useLocalTags";
 import {
+  useAllTags,
   useImagesByTags,
   useLatestImages,
   useWatermarkConfig,
@@ -22,7 +22,7 @@ export function HomePage() {
   const [tagMenuOpen, setTagMenuOpen] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
-  const { data: allTags = [] } = useLocalAllTags();
+  const { data: allTags = [] } = useAllTags();
   const { data: latestImages = [], isLoading: latestLoading } =
     useLatestImages(100);
   const { data: tagFilteredImages = [], isLoading: tagLoading } =

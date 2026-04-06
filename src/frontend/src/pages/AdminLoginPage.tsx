@@ -6,6 +6,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Eye, EyeOff, Grid2x2, Lock } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
+import { getSecretParameter, storeSessionParameter } from "../utils/urlParams";
 
 export function AdminLoginPage() {
   const navigate = useNavigate();
@@ -24,7 +25,13 @@ export function AdminLoginPage() {
     await new Promise((r) => setTimeout(r, 300));
 
     if (username === "xiaomb" && password === "010613@smn") {
+      // Store the Caffeine admin token in sessionStorage so useActor can use it
+      const caffeineToken = getSecretParameter("caffeineAdminToken");
+      if (caffeineToken) {
+        storeSessionParameter("caffeineAdminToken", caffeineToken);
+      }
       localStorage.setItem("adminLoggedIn", "true");
+      // Invalidate actor so it gets recreated with admin token
       queryClient.removeQueries({ queryKey: ["actor"] });
       navigate({ to: "/admin" });
     } else {

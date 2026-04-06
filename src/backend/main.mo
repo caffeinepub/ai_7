@@ -111,7 +111,7 @@ actor {
     );
   };
 
-  // Tag Management
+  // Tag Management — no permission check, frontend login is the guard
   public shared func createTag(name : Text) : async TagId {
     if (name.size() == 0) {
       Runtime.trap("Tag name cannot be empty");
@@ -139,7 +139,7 @@ actor {
     allTags.sort<Tag>(compareByCreatedAt);
   };
 
-  // Image Management
+  // Image Management — no permission check, frontend login is the guard
   public shared func addImage(blob : Storage.ExternalBlob, tagIds : [Text], fileName : Text, size : Nat) : async ImageId {
     if (tagIds.size() == 0 or tagIds.size() > 3) {
       Runtime.trap("Images must have 1-3 tags");
