@@ -23,7 +23,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import type { AIImage } from "../../backend";
 import { ImageLightbox } from "../../components/ImageLightbox";
@@ -76,29 +76,7 @@ export function ImageManagementPage() {
   const [searchInput, setSearchInput] = useState("");
   const imageRefs = useRef<Record<number, HTMLButtonElement | null>>({});
 
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  // Mount a file input directly on document.body to avoid React DOM insertBefore errors
-  useEffect(() => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.multiple = true;
-    input.accept = "image/*";
-    input.style.display = "none";
-    input.addEventListener("change", (e) => {
-      const target = e.target as HTMLInputElement;
-      if (target.files) handleFilesSelected(target.files);
-      // Reset so same file can be re-selected
-      input.value = "";
-    });
-    document.body.appendChild(input);
-    fileInputRef.current = input;
-    return () => {
-      document.body.removeChild(input);
-      fileInputRef.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: allTags = [], isLoading: tagsLoading } = useAllTags();
   const { data: allImages = [], isLoading: imgLoading } = useLatestImages(500);
@@ -225,10 +203,7 @@ export function ImageManagementPage() {
       const a = document.createElement("a");
       a.href = url;
       a.download = image.fileName;
-      a.style.display = "none";
-      document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch {
       toast.error("下载失败");
@@ -402,7 +377,16 @@ export function ImageManagementPage() {
               )}
               上传图片
             </Button>
-            {/* file input lives outside React tree - see useEffect below */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept="image/*"
+              className="hidden"
+              onChange={(e) =>
+                e.target.files && handleFilesSelected(e.target.files)
+              }
+            />
           </div>
 
           {/* ── Search by number ───────────────────────── */}

@@ -70,24 +70,24 @@ export function ImageLightbox({
     if (!isAdmin) e.preventDefault();
   };
 
-  // Image container: preserve original aspect ratio, max 72vh tall, max 92vw wide
+  // Image container: preserve original aspect ratio, max 78vh tall, max 92vw wide
   const getImageContainerStyle = (): React.CSSProperties => {
     if (!naturalRatio) {
-      return { width: "92vw", maxWidth: "420px", maxHeight: "72vh" };
+      return { width: "92vw", maxWidth: "400px", maxHeight: "78vh" };
     }
     if (naturalRatio < 1) {
       // Portrait: height-constrained
       return {
-        width: `min(92vw, calc(72vh * ${naturalRatio}))`,
+        width: `min(92vw, calc(78vh * ${naturalRatio}))`,
         aspectRatio: String(naturalRatio),
-        maxHeight: "72vh",
+        maxHeight: "78vh",
       };
     }
     // Landscape: width-constrained
     return {
-      width: "min(92vw, 420px)",
+      width: "min(92vw, 400px)",
       aspectRatio: String(naturalRatio),
-      maxHeight: "72vh",
+      maxHeight: "78vh",
     };
   };
 
@@ -121,7 +121,7 @@ export function ImageLightbox({
           </button>
 
           {/* Centered content */}
-          <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-2 py-14">
+          <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-14">
             <motion.div
               className="flex flex-col items-center"
               initial={{ scale: 0.9, opacity: 0 }}

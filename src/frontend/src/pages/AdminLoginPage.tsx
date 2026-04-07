@@ -25,16 +25,16 @@ export function AdminLoginPage() {
     await new Promise((r) => setTimeout(r, 300));
 
     if (username === "xiaomb" && password === "010613@smn") {
-      // Extract token from URL hash and store in sessionStorage
+      // Try to get Caffeine admin token from URL hash (stores it in sessionStorage automatically)
+      // getSecretFromHash: checks sessionStorage first, then URL hash, saves to sessionStorage
       const caffeineToken = getSecretFromHash("caffeineAdminToken");
       if (caffeineToken) {
+        // Already stored in sessionStorage by getSecretFromHash
         storeSessionParameter("caffeineAdminToken", caffeineToken);
       }
       localStorage.setItem("adminLoggedIn", "true");
-      // Remove ALL actor queries so useActor re-runs with the new token in queryKey
-      queryClient.removeQueries({
-        predicate: (query) => query.queryKey[0] === "actor",
-      });
+      // Invalidate actor so it gets recreated with admin token
+      queryClient.removeQueries({ queryKey: ["actor"] });
       navigate({ to: "/admin" });
     } else {
       setError("账号或密码错误，请重试");
