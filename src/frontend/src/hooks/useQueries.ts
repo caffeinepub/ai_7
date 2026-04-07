@@ -15,6 +15,63 @@ export interface ContactConfig {
   xiaohongshuBlob?: ExternalBlob;
 }
 
+// ─── Local Tag Storage (primary, never depends on canister) ───────────────────
+
+const LOCAL_TAGS_KEY = "xiaomianbaotuku_tags_v2";
+
+function loadLocalTags(): Tag[] {
+  try {
+    const raw = localStorage.getItem(LOCAL_TAGS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as Tag[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalTags(tags: Tag[]): void {
+  try {
+    localStorage.setItem(LOCAL_TAGS_KEY, JSON.stringify(tags));
+  } catch {
+    // storage quota exceeded – ignore
+  }
+}
+
+// Try to sync tags from canister into localStorage on first load (fire-and-forget)
+async function tryImportTagsFromCanister(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  actor: any,
+): Promise<void> {
+  try {
+    const canisterTags: Tag[] = await Promise.race([
+      actor.getAllTags(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("timeout")), 5000),
+      ),
+    ]);
+    if (!Array.isArray(canisterTags) || canisterTags.length === 0) return;
+    const localTags = loadLocalTags();
+    // Merge: add canister tags that don't exist locally
+    const localIds = new Set(localTags.map((t) => t.id));
+    const merged = [...localTags];
+    for (const t of canisterTags) {
+      if (!localIds.has(t.id)) {
+        merged.push(t);
+      }
+    }
+    if (merged.length > localTags.length) {
+      saveLocalTags(merged);
+    }
+  } catch {
+    // canister unavailable – silently ignore
+  }
+}
+
+let importAttempted = false;
+
+// ─── Image queries (still use canister / blob-storage) ───────────────────────
+
 export function useLatestImages(limit = 50) {
   const { actor, isFetching } = useActor();
   return useQuery<AIImage[]>({
@@ -27,15 +84,27 @@ export function useLatestImages(limit = 50) {
   });
 }
 
+// ─── Tag queries (localStorage as primary, canister optional) ─────────────────
+
 export function useAllTags() {
-  const { actor, isFetching } = useActor();
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
   return useQuery<Tag[]>({
     queryKey: ["allTags"],
     queryFn: async () => {
-      if (!actor) return [];
-      return actor.getAllTags();
+      // One-time import from canister into local storage (best-effort, non-blocking)
+      if (!importAttempted && actor) {
+        importAttempted = true;
+        tryImportTagsFromCanister(actor).then(() => {
+          queryClient.invalidateQueries({ queryKey: ["allTags"] });
+        });
+      }
+      return loadLocalTags();
     },
-    enabled: !!actor && !isFetching,
+    // Always enabled – local storage never fails
+    enabled: true,
+    staleTime: 0,
   });
 }
 
@@ -153,13 +222,22 @@ export function useUpdateContactConfig() {
   });
 }
 
+// ─── Tag mutations (localStorage only, no canister, never fails) ──────────────
+
 export function useCreateTag() {
-  const { actor } = useActor();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (name: string) => {
-      if (!actor) throw new Error("Actor not available");
-      return actor.createTag(name);
+    mutationFn: async (name: string): Promise<string> => {
+      const id = `${name}_${Date.now()}`;
+      const newTag: Tag = {
+        id,
+        name,
+        createdAt: BigInt(Date.now()) * BigInt(1_000_000), // nanoseconds like canister
+      };
+      const tags = loadLocalTags();
+      tags.unshift(newTag);
+      saveLocalTags(tags);
+      return id;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["allTags"] });
@@ -168,12 +246,11 @@ export function useCreateTag() {
 }
 
 export function useDeleteTag() {
-  const { actor } = useActor();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (tagId: string) => {
-      if (!actor) throw new Error("Actor not available");
-      await actor.deleteTag(tagId);
+    mutationFn: async (tagId: string): Promise<void> => {
+      const tags = loadLocalTags().filter((t) => t.id !== tagId);
+      saveLocalTags(tags);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["allTags"] });
@@ -183,6 +260,8 @@ export function useDeleteTag() {
     },
   });
 }
+
+// ─── Image mutations (canister / blob-storage) ────────────────────────────────
 
 export function useAddImage() {
   const { actor } = useActor();
