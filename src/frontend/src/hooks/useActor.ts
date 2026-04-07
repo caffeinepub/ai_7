@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import type { backendInterface } from "../backend";
 import { createActorWithConfig } from "../config";
-import { getSecretParameter, getSessionParameter } from "../utils/urlParams";
+import { getSecretParameter } from "../utils/urlParams";
 import { useInternetIdentity } from "./useInternetIdentity";
 
 const ACTOR_QUERY_KEY = "actor";
@@ -14,19 +14,9 @@ export function useActor() {
     queryFn: async () => {
       const isAuthenticated = !!identity;
 
-      // Get admin token from URL hash or sessionStorage (set after login)
-      const adminToken =
-        getSecretParameter("caffeineAdminToken") ||
-        getSessionParameter("caffeineAdminToken") ||
-        "";
-
       if (!isAuthenticated) {
-        // Anonymous actor — still initialize with admin token if available
-        const actor = await createActorWithConfig();
-        if (adminToken) {
-          await actor._initializeAccessControlWithSecret(adminToken);
-        }
-        return actor;
+        // Return anonymous actor if not authenticated
+        return await createActorWithConfig();
       }
 
       const actorOptions = {
@@ -36,6 +26,7 @@ export function useActor() {
       };
 
       const actor = await createActorWithConfig(actorOptions);
+      const adminToken = getSecretParameter("caffeineAdminToken") || "";
       await actor._initializeAccessControlWithSecret(adminToken);
       return actor;
     },

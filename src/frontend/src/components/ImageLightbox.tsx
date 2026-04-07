@@ -29,14 +29,12 @@ export function ImageLightbox({
   onDelete,
   onTagClick,
 }: ImageLightboxProps) {
-  // Track natural aspect ratio of the loaded image
   const [naturalRatio, setNaturalRatio] = useState<number | null>(null);
 
   const handleClose = useCallback(() => {
     onClose();
   }, [onClose]);
 
-  // Preload image to detect natural dimensions, reset when image changes
   useEffect(() => {
     setNaturalRatio(null);
     if (!image) return;
@@ -72,26 +70,24 @@ export function ImageLightbox({
     if (!isAdmin) e.preventDefault();
   };
 
-  // Calculate image container style based on real aspect ratio
-  // Portrait (ratio < 1): constrain width = 60vh * ratio so height fills exactly 60vh
-  // Landscape (ratio >= 1): full width, let aspect-ratio + maxHeight do the rest
+  // Image container: preserve original aspect ratio, max 55vh tall, max 85vw wide
   const getImageContainerStyle = (): React.CSSProperties => {
     if (!naturalRatio) {
-      return { width: "100%", maxHeight: "60vh" };
+      return { width: "85vw", maxWidth: "320px", maxHeight: "55vh" };
     }
     if (naturalRatio < 1) {
-      // portrait: derive width from the 60vh height ceiling
+      // Portrait: height-constrained
       return {
-        width: `min(100%, calc(60vh * ${naturalRatio}))`,
+        width: `min(85vw, calc(55vh * ${naturalRatio}))`,
         aspectRatio: String(naturalRatio),
-        maxHeight: "60vh",
+        maxHeight: "55vh",
       };
     }
-    // landscape
+    // Landscape: width-constrained
     return {
-      width: "100%",
+      width: "min(85vw, 320px)",
       aspectRatio: String(naturalRatio),
-      maxHeight: "60vh",
+      maxHeight: "55vh",
     };
   };
 
@@ -114,7 +110,7 @@ export function ImageLightbox({
             aria-label="关闭预览"
           />
 
-          {/* Close button — fixed at top-right, always above scrollable content */}
+          {/* Close button — fixed top-right, always visible */}
           <button
             type="button"
             className="fixed top-3 right-3 z-[60] bg-white/20 hover:bg-white/35 text-white rounded-full p-2.5 transition-colors"
@@ -124,16 +120,16 @@ export function ImageLightbox({
             <X className="h-5 w-5" />
           </button>
 
-          {/* Scrollable content column, starts below the close button */}
-          <div className="relative z-10 flex flex-col items-center w-full max-w-sm mx-auto px-3 py-10">
+          {/* Centered content */}
+          <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-14">
             <motion.div
-              className="flex flex-col items-center w-full"
+              className="flex flex-col items-center"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
             >
-              {/* Image sequence number */}
+              {/* Image number */}
               {imageIndex !== undefined && (
                 <div className="mb-1.5 self-start pl-0.5">
                   <span className="text-white/70 text-xs font-mono bg-black/40 px-2 py-0.5 rounded-full">
@@ -142,7 +138,7 @@ export function ImageLightbox({
                 </div>
               )}
 
-              {/* Image container — respects real aspect ratio */}
+              {/* Image — original aspect ratio, phone-friendly size */}
               <div
                 className="rounded-lg overflow-hidden shadow-2xl bg-black"
                 style={getImageContainerStyle()}
@@ -171,10 +167,10 @@ export function ImageLightbox({
                 )}
               </div>
 
-              {/* Tag pills + admin actions */}
+              {/* Tags + admin actions */}
               {(imageTags.length > 0 ||
                 (isAdmin && (onDownload || onDelete))) && (
-                <div className="mt-2.5 mb-1 flex items-center gap-2 flex-wrap justify-center">
+                <div className="mt-2.5 flex items-center gap-2 flex-wrap justify-center max-w-[85vw]">
                   {imageTags.map((tag) => (
                     <button
                       key={tag.id}

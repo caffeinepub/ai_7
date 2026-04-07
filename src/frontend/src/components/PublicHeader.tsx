@@ -4,7 +4,6 @@ import { AnimatePresence, motion } from "motion/react";
 import { useRef, useState } from "react";
 import { useContactConfig, usePaymentConfig } from "../hooks/useQueries";
 
-// QQ SVG icon
 function QQIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -18,7 +17,6 @@ function QQIcon({ className }: { className?: string }) {
   );
 }
 
-// Xiaohongshu SVG icon
 function XiaohongshuIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -32,53 +30,14 @@ function XiaohongshuIcon({ className }: { className?: string }) {
   );
 }
 
-/**
- * Convert a click position (in viewport coordinates) into a transformOrigin
- * percentage string relative to a centered modal card.
- *
- * The card is displayed centered in the viewport via `fixed inset-0 flex
- * items-center justify-center`, so the card's top-left corner is at:
- *   left = (vw - cardW) / 2
- *   top  = (vh - cardH) / 2
- *
- * The transform origin must be expressed as an offset from the card's own
- * top-left corner, which we then convert to percentages of card dimensions.
- */
-function computeTransformOrigin(
-  clickX: number,
-  clickY: number,
-  cardW: number,
-  cardH: number,
-): string {
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-
-  // Position of the card's top-left corner in viewport space
-  const cardLeft = (vw - cardW) / 2;
-  const cardTop = (vh - cardH) / 2;
-
-  // Click offset relative to card's top-left corner
-  const dx = clickX - cardLeft;
-  const dy = clickY - cardTop;
-
-  // Convert to percentages of card dimensions, clamped to [0, 100]
-  const ox = Math.max(0, Math.min(100, (dx / cardW) * 100));
-  const oy = Math.max(0, Math.min(100, (dy / cardH) * 100));
-
-  return `${ox.toFixed(1)}% ${oy.toFixed(1)}%`;
-}
-
-interface ClickOrigin {
-  x: number;
-  y: number;
-  transformOrigin: string;
-}
-
 export function PublicHeader() {
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
-  const [paymentOrigin, setPaymentOrigin] = useState<ClickOrigin | null>(null);
-  const [contactOrigin, setContactOrigin] = useState<ClickOrigin | null>(null);
+  // Store transform origin as a string (percentage-based, relative to button)
+  const [paymentOrigin, setPaymentOrigin] = useState("50% 100%");
+  const [contactOrigin, setContactOrigin] = useState("50% 100%");
+  const paymentBtnRef = useRef<HTMLButtonElement>(null);
+  const contactBtnRef = useRef<HTMLButtonElement>(null);
   const navigate = useNavigate();
   const { data: paymentConfig } = usePaymentConfig();
   const { data: contactConfig } = useContactConfig();
@@ -90,7 +49,6 @@ export function PublicHeader() {
   const wechatContactUrl = contactConfig?.wechatBlob?.getDirectURL();
   const xiaohongshuUrl = contactConfig?.xiaohongshuBlob?.getDirectURL();
 
-  // Hidden admin login: 2 clicks within 2 seconds on the logo icon
   const clickCountRef = useRef(0);
   const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -107,30 +65,60 @@ export function PublicHeader() {
     }, 2000);
   };
 
-  const handlePaymentClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    // Compute card dimensions at click time to avoid SSR issues
-    const cardW = Math.min(280, window.innerWidth * 0.85);
-    const cardH = 460;
-    const origin = computeTransformOrigin(e.clientX, e.clientY, cardW, cardH);
-    setPaymentOrigin({ x: e.clientX, y: e.clientY, transformOrigin: origin });
+  /**
+   * Compute transformOrigin for the modal card so it appears to expand
+   * FROM the button's position. The modal is centered in the viewport.
+   * We find where the button is relative to the eventual card center.
+   */
+  const getOriginFromButton = (
+    btnEl: HTMLButtonElement,
+    cardW: number,
+    cardH: number,
+  ): string => {
+    const rect = btnEl.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    // Button center in viewport
+    const btnCx = rect.left + rect.width / 2;
+    const btnCy = rect.top + rect.height / 2;
+    // Card top-left in viewport (card is centered)
+    const cardLeft = (vw - cardW) / 2;
+    const cardTop = (vh - cardH) / 2;
+    // Offset of button center relative to card top-left
+    const ox = btnCx - cardLeft;
+    const oy = btnCy - cardTop;
+    // Clamp to [0,100]%
+    const pctX = Math.max(0, Math.min(100, (ox / cardW) * 100));
+    const pctY = Math.max(0, Math.min(100, (oy / cardH) * 100));
+    return `${pctX.toFixed(1)}% ${pctY.toFixed(1)}%`;
+  };
+
+  const handlePaymentClick = () => {
+    if (paymentBtnRef.current) {
+      const cardW = Math.min(window.innerWidth * 0.85, 280);
+      const cardH = 460;
+      setPaymentOrigin(
+        getOriginFromButton(paymentBtnRef.current, cardW, cardH),
+      );
+    }
     setPaymentOpen(true);
   };
 
-  const handleContactClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    // Compute card dimensions at click time to avoid SSR issues
-    const cardW = Math.min(280, window.innerWidth * 0.85);
-    const cardH = 560;
-    const origin = computeTransformOrigin(e.clientX, e.clientY, cardW, cardH);
-    setContactOrigin({ x: e.clientX, y: e.clientY, transformOrigin: origin });
+  const handleContactClick = () => {
+    if (contactBtnRef.current) {
+      const cardW = Math.min(window.innerWidth * 0.85, 280);
+      const cardH = 560;
+      setContactOrigin(
+        getOriginFromButton(contactBtnRef.current, cardW, cardH),
+      );
+    }
     setContactOpen(true);
   };
 
   return (
     <>
-      {/* Single top header bar: icon | title | payment + contact buttons */}
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="max-w-[1600px] mx-auto px-2 sm:px-4 h-12 flex items-center gap-1.5 sm:gap-2 min-w-0">
-          {/* Hidden admin login trigger (bread emoji icon) */}
           <button
             type="button"
             onClick={handleLogoIconClick}
@@ -141,7 +129,6 @@ export function PublicHeader() {
             <span className="text-base leading-none select-none">🍞</span>
           </button>
 
-          {/* Title */}
           <Link
             to="/"
             className="no-underline shrink-0 min-w-0"
@@ -152,11 +139,10 @@ export function PublicHeader() {
             </span>
           </Link>
 
-          {/* Spacer */}
           <div className="flex-1 min-w-0" />
 
-          {/* Payment button */}
           <button
+            ref={paymentBtnRef}
             type="button"
             onClick={handlePaymentClick}
             className="flex items-center gap-1 px-2 py-1 rounded border border-pink-300 bg-pink-50 text-pink-700 font-medium text-xs hover:bg-pink-100 hover:border-pink-400 transition-colors shrink-0"
@@ -173,8 +159,8 @@ export function PublicHeader() {
             <span className="opacity-70">5/p</span>
           </button>
 
-          {/* Contact button */}
           <button
+            ref={contactBtnRef}
             type="button"
             onClick={handleContactClick}
             className="flex items-center gap-1 px-2 py-1 rounded border border-rose-300 bg-rose-50 text-rose-700 font-medium text-xs hover:bg-rose-100 hover:border-rose-400 transition-colors shrink-0"
@@ -194,9 +180,8 @@ export function PublicHeader() {
 
       {/* Payment Modal */}
       <AnimatePresence>
-        {paymentOpen && paymentOrigin && (
+        {paymentOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
               initial={{ opacity: 0 }}
@@ -205,18 +190,16 @@ export function PublicHeader() {
               transition={{ duration: 0.2 }}
               onClick={() => setPaymentOpen(false)}
             />
-            {/* Modal content */}
             <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
               <motion.div
                 className="w-[85vw] max-w-[280px] bg-background rounded-xl shadow-2xl p-4 pointer-events-auto"
-                initial={{ scale: 0, opacity: 0 }}
+                initial={{ scale: 0.05, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0, opacity: 0 }}
-                transition={{ type: "spring", stiffness: 350, damping: 30 }}
-                style={{ transformOrigin: paymentOrigin.transformOrigin }}
+                exit={{ scale: 0.05, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 400, damping: 28 }}
+                style={{ transformOrigin: paymentOrigin }}
                 data-ocid="payment.dialog"
               >
-                {/* Header */}
                 <div className="flex items-center justify-between pb-1 mb-2">
                   <div className="flex-1" />
                   <h2 className="text-pink-700 text-center text-base font-semibold flex-1">
@@ -236,7 +219,6 @@ export function PublicHeader() {
                 </div>
 
                 <div className="flex flex-col items-center gap-4 py-2">
-                  {/* WeChat Pay */}
                   <div className="flex flex-col items-center gap-1.5 w-full">
                     {wechatPayUrl ? (
                       <img
@@ -263,7 +245,6 @@ export function PublicHeader() {
 
                   <div className="w-full h-px bg-border" />
 
-                  {/* Alipay */}
                   <div className="flex flex-col items-center gap-1.5 w-full">
                     {alipayUrl ? (
                       <img
@@ -300,9 +281,8 @@ export function PublicHeader() {
 
       {/* Contact Modal */}
       <AnimatePresence>
-        {contactOpen && contactOrigin && (
+        {contactOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
               initial={{ opacity: 0 }}
@@ -311,18 +291,16 @@ export function PublicHeader() {
               transition={{ duration: 0.2 }}
               onClick={() => setContactOpen(false)}
             />
-            {/* Modal content */}
             <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
               <motion.div
                 className="w-[85vw] max-w-[280px] bg-background rounded-xl shadow-2xl p-4 pointer-events-auto"
-                initial={{ scale: 0, opacity: 0 }}
+                initial={{ scale: 0.05, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0, opacity: 0 }}
-                transition={{ type: "spring", stiffness: 350, damping: 30 }}
-                style={{ transformOrigin: contactOrigin.transformOrigin }}
+                exit={{ scale: 0.05, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 400, damping: 28 }}
+                style={{ transformOrigin: contactOrigin }}
                 data-ocid="contact.dialog"
               >
-                {/* Header */}
                 <div className="flex items-center justify-between pb-1 mb-2">
                   <div className="flex-1" />
                   <h2 className="text-rose-700 text-center text-base font-semibold flex-1">
@@ -342,7 +320,6 @@ export function PublicHeader() {
                 </div>
 
                 <div className="flex flex-col items-center gap-3 py-2">
-                  {/* QQ */}
                   <div className="flex flex-col items-center gap-1 w-full">
                     {qqUrl ? (
                       <img
@@ -363,7 +340,6 @@ export function PublicHeader() {
 
                   <div className="w-full h-px bg-border" />
 
-                  {/* WeChat contact */}
                   <div className="flex flex-col items-center gap-1 w-full">
                     {wechatContactUrl ? (
                       <img
@@ -390,7 +366,6 @@ export function PublicHeader() {
 
                   <div className="w-full h-px bg-border" />
 
-                  {/* Xiaohongshu */}
                   <div className="flex flex-col items-center gap-1 w-full">
                     {xiaohongshuUrl ? (
                       <img
