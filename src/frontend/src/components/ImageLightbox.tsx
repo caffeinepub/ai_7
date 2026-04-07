@@ -60,7 +60,7 @@ export function ImageLightbox({
     <AnimatePresence>
       {image && (
         <motion.div
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center"
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center px-3"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -78,16 +78,17 @@ export function ImageLightbox({
           {/* Close button */}
           <button
             type="button"
-            className="absolute top-4 right-4 z-10 bg-white/10 hover:bg-white/20 text-white rounded-full p-2 transition-colors"
+            className="absolute top-3 right-3 z-20 bg-white/20 hover:bg-white/35 text-white rounded-full p-2 transition-colors"
             onClick={handleClose}
             data-ocid="lightbox.close_button"
           >
             <X className="h-5 w-5" />
           </button>
 
-          {/* Image */}
+          {/* Content wrapper — scrollable on very small phones */}
           <motion.div
-            className="relative z-10 flex flex-col items-center max-w-4xl w-full mx-4"
+            className="relative z-10 flex flex-col items-center w-full max-w-sm mx-auto"
+            style={{ maxHeight: "calc(100dvh - 48px)", overflowY: "auto" }}
             initial={{ scale: 0.9, y: 20 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.9, y: 20 }}
@@ -95,8 +96,8 @@ export function ImageLightbox({
           >
             {/* Image sequence number */}
             {imageIndex !== undefined && (
-              <div className="mb-2 self-start">
-                <span className="text-white/60 text-xs font-mono bg-black/30 px-2 py-0.5 rounded-full">
+              <div className="mb-1.5 self-start pl-0.5">
+                <span className="text-white/70 text-xs font-mono bg-black/40 px-2 py-0.5 rounded-full">
                   #{imageIndex + 1}
                 </span>
               </div>
@@ -105,7 +106,6 @@ export function ImageLightbox({
             <div
               className="w-full rounded-lg overflow-hidden shadow-2xl bg-black"
               onContextMenu={handleContextMenu}
-              style={{ maxHeight: "75vh" }}
             >
               {showWatermark ? (
                 <WatermarkedImage
@@ -119,54 +119,57 @@ export function ImageLightbox({
                   src={image.blob.getDirectURL()}
                   alt={image.fileName}
                   className="w-full object-contain"
-                  style={{ maxHeight: "75vh" }}
+                  style={{ maxHeight: "60vh" }}
                   draggable={false}
                 />
               )}
             </div>
 
             {/* Tag pills + admin actions */}
-            <div className="mt-3 flex items-center gap-2 flex-wrap justify-center">
-              {imageTags.map((tag) => (
-                <button
-                  key={tag.id}
-                  type="button"
-                  className="flex items-center gap-1.5 bg-primary/90 hover:bg-primary text-primary-foreground text-sm px-3 py-1.5 rounded-full transition-colors"
-                  onClick={() => {
-                    if (onTagClick) {
-                      handleClose();
-                      onTagClick(tag.id);
-                    }
-                  }}
-                  data-ocid="lightbox.link"
-                >
-                  <Tag className="h-3.5 w-3.5" />
-                  {tag.name}
-                </button>
-              ))}
+            {(imageTags.length > 0 ||
+              (isAdmin && (onDownload || onDelete))) && (
+              <div className="mt-2.5 mb-1 flex items-center gap-2 flex-wrap justify-center">
+                {imageTags.map((tag) => (
+                  <button
+                    key={tag.id}
+                    type="button"
+                    className="flex items-center gap-1.5 bg-primary/90 hover:bg-primary text-primary-foreground text-xs px-3 py-1.5 rounded-full transition-colors"
+                    onClick={() => {
+                      if (onTagClick) {
+                        handleClose();
+                        onTagClick(tag.id);
+                      }
+                    }}
+                    data-ocid="lightbox.link"
+                  >
+                    <Tag className="h-3 w-3" />
+                    {tag.name}
+                  </button>
+                ))}
 
-              {isAdmin && onDownload && (
-                <button
-                  type="button"
-                  className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-sm px-3 py-1.5 rounded-full transition-colors"
-                  onClick={() => onDownload(image)}
-                  data-ocid="lightbox.secondary_button"
-                >
-                  下载原图
-                </button>
-              )}
+                {isAdmin && onDownload && (
+                  <button
+                    type="button"
+                    className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-full transition-colors"
+                    onClick={() => onDownload(image)}
+                    data-ocid="lightbox.secondary_button"
+                  >
+                    下载原图
+                  </button>
+                )}
 
-              {isAdmin && onDelete && (
-                <button
-                  type="button"
-                  className="flex items-center gap-1.5 bg-destructive/80 hover:bg-destructive text-destructive-foreground text-sm px-3 py-1.5 rounded-full transition-colors"
-                  onClick={() => onDelete(image)}
-                  data-ocid="lightbox.delete_button"
-                >
-                  删除图片
-                </button>
-              )}
-            </div>
+                {isAdmin && onDelete && (
+                  <button
+                    type="button"
+                    className="flex items-center gap-1.5 bg-destructive/80 hover:bg-destructive text-destructive-foreground text-xs px-3 py-1.5 rounded-full transition-colors"
+                    onClick={() => onDelete(image)}
+                    data-ocid="lightbox.delete_button"
+                  >
+                    删除图片
+                  </button>
+                )}
+              </div>
+            )}
           </motion.div>
         </motion.div>
       )}
