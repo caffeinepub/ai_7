@@ -6,7 +6,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Eye, EyeOff, Grid2x2, Lock } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
-import { getSecretParameter, storeSessionParameter } from "../utils/urlParams";
+import { getSecretFromHash, storeSessionParameter } from "../utils/urlParams";
 
 export function AdminLoginPage() {
   const navigate = useNavigate();
@@ -25,9 +25,11 @@ export function AdminLoginPage() {
     await new Promise((r) => setTimeout(r, 300));
 
     if (username === "xiaomb" && password === "010613@smn") {
-      // Store the Caffeine admin token in sessionStorage so useActor can use it
-      const caffeineToken = getSecretParameter("caffeineAdminToken");
+      // Try to get Caffeine admin token from URL hash (stores it in sessionStorage automatically)
+      // getSecretFromHash: checks sessionStorage first, then URL hash, saves to sessionStorage
+      const caffeineToken = getSecretFromHash("caffeineAdminToken");
       if (caffeineToken) {
+        // Already stored in sessionStorage by getSecretFromHash
         storeSessionParameter("caffeineAdminToken", caffeineToken);
       }
       localStorage.setItem("adminLoggedIn", "true");
