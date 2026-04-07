@@ -70,24 +70,24 @@ export function ImageLightbox({
     if (!isAdmin) e.preventDefault();
   };
 
-  // Image container: preserve original aspect ratio, max 55vh tall, max 85vw wide
+  // Image container: preserve original aspect ratio, max 72vh tall, max 92vw wide
   const getImageContainerStyle = (): React.CSSProperties => {
     if (!naturalRatio) {
-      return { width: "85vw", maxWidth: "320px", maxHeight: "55vh" };
+      return { width: "92vw", maxWidth: "420px", maxHeight: "72vh" };
     }
     if (naturalRatio < 1) {
       // Portrait: height-constrained
       return {
-        width: `min(85vw, calc(55vh * ${naturalRatio}))`,
+        width: `min(92vw, calc(72vh * ${naturalRatio}))`,
         aspectRatio: String(naturalRatio),
-        maxHeight: "55vh",
+        maxHeight: "72vh",
       };
     }
     // Landscape: width-constrained
     return {
-      width: "min(85vw, 320px)",
+      width: "min(92vw, 420px)",
       aspectRatio: String(naturalRatio),
-      maxHeight: "55vh",
+      maxHeight: "72vh",
     };
   };
 
@@ -121,7 +121,7 @@ export function ImageLightbox({
           </button>
 
           {/* Centered content */}
-          <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-14">
+          <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-2 py-14">
             <motion.div
               className="flex flex-col items-center"
               initial={{ scale: 0.9, opacity: 0 }}
@@ -170,7 +170,7 @@ export function ImageLightbox({
               {/* Tags + admin actions */}
               {(imageTags.length > 0 ||
                 (isAdmin && (onDownload || onDelete))) && (
-                <div className="mt-2.5 flex items-center gap-2 flex-wrap justify-center max-w-[85vw]">
+                <div className="mt-2.5 flex items-center gap-2 flex-wrap justify-center max-w-[92vw]">
                   {imageTags.map((tag) => (
                     <button
                       key={tag.id}
