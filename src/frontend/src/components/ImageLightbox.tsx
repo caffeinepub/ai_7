@@ -70,24 +70,24 @@ export function ImageLightbox({
     if (!isAdmin) e.preventDefault();
   };
 
-  // Image container: preserve original aspect ratio, max 78vh tall, max 92vw wide
+  // Image container: preserve original aspect ratio, max 55vh tall, max 85vw wide
   const getImageContainerStyle = (): React.CSSProperties => {
     if (!naturalRatio) {
-      return { width: "92vw", maxWidth: "400px", maxHeight: "78vh" };
+      return { width: "85vw", maxWidth: "320px", maxHeight: "55vh" };
     }
     if (naturalRatio < 1) {
       // Portrait: height-constrained
       return {
-        width: `min(92vw, calc(78vh * ${naturalRatio}))`,
+        width: `min(85vw, calc(55vh * ${naturalRatio}))`,
         aspectRatio: String(naturalRatio),
-        maxHeight: "78vh",
+        maxHeight: "55vh",
       };
     }
     // Landscape: width-constrained
     return {
-      width: "min(92vw, 400px)",
+      width: "min(85vw, 320px)",
       aspectRatio: String(naturalRatio),
-      maxHeight: "78vh",
+      maxHeight: "55vh",
     };
   };
 
@@ -170,7 +170,7 @@ export function ImageLightbox({
               {/* Tags + admin actions */}
               {(imageTags.length > 0 ||
                 (isAdmin && (onDownload || onDelete))) && (
-                <div className="mt-2.5 flex items-center gap-2 flex-wrap justify-center max-w-[92vw]">
+                <div className="mt-2.5 flex items-center gap-2 flex-wrap justify-center max-w-[85vw]">
                   {imageTags.map((tag) => (
                     <button
                       key={tag.id}
