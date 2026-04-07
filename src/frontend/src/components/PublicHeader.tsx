@@ -32,9 +32,46 @@ function XiaohongshuIcon({ className }: { className?: string }) {
   );
 }
 
+/**
+ * Convert a click position (in viewport coordinates) into a transformOrigin
+ * percentage string relative to a centered modal card.
+ *
+ * The card is displayed centered in the viewport via `fixed inset-0 flex
+ * items-center justify-center`, so the card's top-left corner is at:
+ *   left = (vw - cardW) / 2
+ *   top  = (vh - cardH) / 2
+ *
+ * The transform origin must be expressed as an offset from the card's own
+ * top-left corner, which we then convert to percentages of card dimensions.
+ */
+function computeTransformOrigin(
+  clickX: number,
+  clickY: number,
+  cardW: number,
+  cardH: number,
+): string {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  // Position of the card's top-left corner in viewport space
+  const cardLeft = (vw - cardW) / 2;
+  const cardTop = (vh - cardH) / 2;
+
+  // Click offset relative to card's top-left corner
+  const dx = clickX - cardLeft;
+  const dy = clickY - cardTop;
+
+  // Convert to percentages of card dimensions, clamped to [0, 100]
+  const ox = Math.max(0, Math.min(100, (dx / cardW) * 100));
+  const oy = Math.max(0, Math.min(100, (dy / cardH) * 100));
+
+  return `${ox.toFixed(1)}% ${oy.toFixed(1)}%`;
+}
+
 interface ClickOrigin {
   x: number;
   y: number;
+  transformOrigin: string;
 }
 
 export function PublicHeader() {
@@ -71,12 +108,20 @@ export function PublicHeader() {
   };
 
   const handlePaymentClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    setPaymentOrigin({ x: e.clientX, y: e.clientY });
+    // Compute card dimensions at click time to avoid SSR issues
+    const cardW = Math.min(280, window.innerWidth * 0.85);
+    const cardH = 460;
+    const origin = computeTransformOrigin(e.clientX, e.clientY, cardW, cardH);
+    setPaymentOrigin({ x: e.clientX, y: e.clientY, transformOrigin: origin });
     setPaymentOpen(true);
   };
 
   const handleContactClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    setContactOrigin({ x: e.clientX, y: e.clientY });
+    // Compute card dimensions at click time to avoid SSR issues
+    const cardW = Math.min(280, window.innerWidth * 0.85);
+    const cardH = 560;
+    const origin = computeTransformOrigin(e.clientX, e.clientY, cardW, cardH);
+    setContactOrigin({ x: e.clientX, y: e.clientY, transformOrigin: origin });
     setContactOpen(true);
   };
 
@@ -168,9 +213,7 @@ export function PublicHeader() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 350, damping: 30 }}
-                style={{
-                  transformOrigin: `${paymentOrigin.x}px ${paymentOrigin.y}px`,
-                }}
+                style={{ transformOrigin: paymentOrigin.transformOrigin }}
                 data-ocid="payment.dialog"
               >
                 {/* Header */}
@@ -276,9 +319,7 @@ export function PublicHeader() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 350, damping: 30 }}
-                style={{
-                  transformOrigin: `${contactOrigin.x}px ${contactOrigin.y}px`,
-                }}
+                style={{ transformOrigin: contactOrigin.transformOrigin }}
                 data-ocid="contact.dialog"
               >
                 {/* Header */}
